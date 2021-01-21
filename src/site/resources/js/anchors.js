@@ -31,12 +31,7 @@
 
         var anchorsSubSection = document.getElementsByTagName("h3");
         [].forEach.call(anchorsSubSection, function (anchorItem) {
-            var name;
-            if (anchorItem.parentNode.id) {
-                name = anchorItem.parentNode.id;
-            } else {
-                name = anchorItem.childNodes[0].name;
-            }
+            var name = anchorItem.parentNode.previousElementSibling.name;
             var link = "" + url + "#" + name + "";
 
             var a = document.createElement("a");
