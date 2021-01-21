@@ -280,11 +280,21 @@ public final class FileContents implements CommentListener {
      */
     private boolean hasIntersectionWithBlockComment(int startLineNo, int startColNo,
             int endLineNo, int endColNo) {
+        boolean hasIntersection = false;
         // Check C comments (all comments should be checked)
         final Collection<List<TextBlock>> values = clangComments.values();
-        return values.stream()
-            .flatMap(List::stream)
-            .anyMatch(comment -> comment.intersects(startLineNo, startColNo, endLineNo, endColNo));
+        for (final List<TextBlock> row : values) {
+            for (final TextBlock comment : row) {
+                if (comment.intersects(startLineNo, startColNo, endLineNo, endColNo)) {
+                    hasIntersection = true;
+                    break;
+                }
+            }
+            if (hasIntersection) {
+                break;
+            }
+        }
+        return hasIntersection;
     }
 
     /**

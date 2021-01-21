@@ -88,9 +88,7 @@ eclipse-static-analysis)
   ;;
 
 nondex)
-  # Below we exclude test that fails due to picocli library usage
-  mvn -e --fail-never clean nondex:nondex -DargLine='-Xms1024m -Xmx2048m' \
-    -Dtest=!JavadocPropertiesGeneratorTest#testNonExistentArgument
+  mvn -e --fail-never clean nondex:nondex -DargLine='-Xms1024m -Xmx2048m'
   mkdir -p .ci-temp
   cat `grep -RlE 'td class=.x' .nondex/ | cat` < /dev/null > .ci-temp/output.txt
   RESULT=$(cat .ci-temp/output.txt | wc -c)
