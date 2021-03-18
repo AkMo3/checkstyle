@@ -22,6 +22,7 @@ package com.puppycrawl.tools.checkstyle;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -29,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +41,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.MapDifference;
@@ -45,6 +49,7 @@ import com.google.common.collect.Maps;
 import com.puppycrawl.tools.checkstyle.api.Configuration;
 import com.puppycrawl.tools.checkstyle.api.LocalizedMessage;
 import com.puppycrawl.tools.checkstyle.internal.utils.BriefUtLogger;
+import com.puppycrawl.tools.checkstyle.utils.CommonUtil;
 import com.puppycrawl.tools.checkstyle.utils.ModuleReflectionUtil;
 
 public abstract class AbstractModuleTestSupport extends AbstractPathTestSupport {
@@ -68,6 +73,9 @@ public abstract class AbstractModuleTestSupport extends AbstractPathTestSupport 
     }
 
     private static final String ROOT_MODULE_NAME = "root";
+
+    private static final Pattern VIOLATION_PATTERN = CommonUtil
+            .createPattern(".*[ ]*//[ ]*violation[ ]at[ ]\\d*:\\d*:[ ]*");
 
     private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
@@ -366,6 +374,59 @@ public abstract class AbstractModuleTestSupport extends AbstractPathTestSupport 
                         && differingViolations.isEmpty());
 
         checker.destroy();
+    }
+
+    /**
+     * Returns a Map which consists of expected violation of test file with the given file name.
+     *
+     * @param fileName file name.
+     * @return an Map of line and column positions of which represent expected violation.
+     * @throws IOException if I/O exception occurs while reading the file.
+     */
+    protected final Map<Integer, Integer> getLinesWithViolation(String fileName)
+            throws IOException {
+        final Map<Integer, Integer> violation = new HashMap<>();
+        try (BufferedReader br = Files.newBufferedReader(
+                Paths.get(fileName), StandardCharsets.UTF_8)) {
+            while (true) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                }
+                if (VIOLATION_PATTERN.matcher(line).find()) {
+                    line = line.trim();
+                    final int violationLine = Integer.parseInt(line.substring(line.length() - 6,
+                            line.length() - 4));
+                    final int violationColumn = Integer.parseInt(line.substring(line.length() - 3,
+                            line.length() - 1));
+                    violation.put(violationLine, violationColumn);
+                }
+            }
+        }
+        return violation;
+    }
+
+    /**
+     * Returns an array of string which represents violation expected violation messages in the
+     * file with the given file name.
+     *
+     * @param filePath Path to file.
+     * @param violationMessage violation message at point of violation.
+     * @return an array of string representing expected violations.
+     * @throws IOException if I/O exception occurs while reading the file.
+     */
+    protected final String[] getViolationMessage(String filePath, String violationMessage)
+            throws IOException {
+        final ArrayList<String> violationMessages = new ArrayList<>();
+        final Map<Integer, Integer> violations = getLinesWithViolation(filePath);
+        for (int e: violations.keySet()) {
+            violationMessages.add(e + ":" + violations.get(e) + ": " + violationMessage);
+        }
+
+        String[] violation = new String[violationMessages.size()];
+        violation = violationMessages.toArray(violation);
+
+        return violation;
     }
 
     private Map<String, List<String>> getActualViolations(int errorCount) throws IOException {

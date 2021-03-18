@@ -122,11 +122,10 @@ public class IllegalThrowsCheckTest extends AbstractModuleTestSupport {
     public void testNotIgnoreOverriddenMethods() throws Exception {
         final DefaultConfiguration checkConfig = createModuleConfig(IllegalThrowsCheck.class);
         checkConfig.addAttribute("ignoreOverriddenMethods", "false");
+        final String filePath = getPath("InputIllegalThrowsIgnoreOverriddenMethods.java");
 
-        final String[] expected = {
-            "7:36: " + getCheckMessage(MSG_KEY, "RuntimeException"),
-            "12:51: " + getCheckMessage(MSG_KEY, "RuntimeException"),
-        };
+        final String[] expected = getViolationMessage(filePath, getCheckMessage(MSG_KEY,
+                "RuntimeException"));
 
         verify(checkConfig, getPath("InputIllegalThrowsIgnoreOverriddenMethods.java"), expected);
     }
