@@ -18,7 +18,7 @@ jobs:
       - name: Download checkstyle
         uses: actions/checkout@v2
         with:
-          repository: checkstyle/checkstyle
+          repository: AkMo3/checkstyle
           ref: master
           path: checkstyle
 
